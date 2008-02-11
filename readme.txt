@@ -1,7 +1,7 @@
 === Plugin Name ===
 Contributors: Tarkan Akdam
 Donate link: http://www.tarkan.info/tag/plugin/
-Tags: posts, link_pages, multi-page, quicktag, navigation, 2.3,  paginate, pagination, titles, heading, pages, quick jump
+Tags: posts, link_pages, multi-page, quicktag, navigation, 2.3,  paginate, pagination, titles, heading, pages, quick jump, multipage
 Requires at least: 2.3
 Tested up to: 2.3.3
 Stable tag: 1.0
