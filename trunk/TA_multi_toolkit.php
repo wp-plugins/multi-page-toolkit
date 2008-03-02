@@ -4,7 +4,7 @@
 Plugin Name: Multi-page Toolkit
 Plugin URI:  http://www.tarkan.info/
 Description: Multipage post replacement for wp_link_page with page titling
-Version: 1.0
+Version: 1.1
 Author: Tarkan Akdam
 Author URI: http://www.tarkan.info
 
@@ -35,6 +35,12 @@ Author URI: http://www.tarkan.info
 
 	You can also view a copy of the HTML version of the GNU General
 	Public License at http://www.gnu.org/copyleft/gpl.html
+
+CHANGELOG
+
+v1.1 - NEW quick jump method - page list / content menu
+v1.0 - Initial release
+
 */
 
 function TA_display_pages($firsttext = ' Page ' , $lasttext = ' ' , $midtext = ' of ' , $display_type = 'all' ) {
@@ -99,6 +105,14 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 				if ($nav_type == 1) $output .= '<span class="contentjumptitle" >'.$firstpagetext.'</span>';
 			}	
 			
+			if (($quick_type == 0) && ($nav_type == 1)) {
+				if (empty($pagetitles[$page - 1])) $output .= '<span class="contentjumptitle" >Page '.$page.'</span>';
+				else {
+					if ($nav_number) $output .= '<span class="contentjumptitle" >'. $page . '. ' . $pagetitles[$page - 1] . '</span>';
+					else $output .= '<span class="contentjumptitle" >'. $pagetitles[$page - 1].'</span>';
+				}
+			}
+			
 			if ($quick_type == 1) {
 				$output .= '<select class="contentjumpddl" onchange="location = this.options[this.selectedIndex].value;">' ;
 			
@@ -140,7 +154,38 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 					if ($page == $i) $output .= '<span class="contentjumpnumber">'.$i.'</span>';	
 				}
 			}
-			
+
+			if ($quick_type == 3) {
+				$output .= '<ol class="contentlist">' ;
+				$title_number = 0 ;
+				
+				for ( $i = 1; $i < ($numpages+1); $i = $i + 1 ) {
+					$pagename = $pagetitles[$i-1];				
+					
+					if ($page == $i) {
+						$output .= '<li><span class="contentlist" >';
+						if ($title_number == 0) $output.= $pagename ;
+						if ($title_number == 1) $output.= $pagename .' (' .$i.'/'.$numpages.')';
+						if ($title_number == 2) $output.= $i .'. ' . $pagename ;					
+						$output .= '</span></li>';
+					}
+					else {
+						if ( 1 == $i ) $output .='<li><a class="contentlist" href="' . get_permalink().'"' ;
+						else $output .='<li><a class="contentlist" href="' . get_permalink().$i.'/"' ;
+					
+						if (empty($pagename)) $output .= '>Page '.$i;
+						else {
+							$output .= '>';
+							if ($title_number == 0) $output.= $pagename ;
+							if ($title_number == 1) $output.= $pagename .' (' .$i.'/'.$numpages.')';
+							if ($title_number == 2) $output.= $i .'. ' . $pagename ;
+						}
+						$output .='</a></li>';
+					}			
+					
+				}
+				$output .= '</ol>';
+			}		
 			
 			if ($page < $numpages) {
 				if ($nav_type == 2) $output .= '<a class="contentjumplink" href="' . get_permalink() . $nextlink . '/" >'.$nextpagelink.'</a>';
