@@ -39,7 +39,8 @@ Quick jump options include dropdown menu or a list menu using page numbers or pa
 
 Place this in your template file (e.g. index.php)
 
-	<?php if(function_exists('TA_display_pages')) { TA_display_pages(); } ?>
+	<?php if(function_exists('TA_display_pages')) { 
+	TA_display_pages(); } ?>
 
 Parameters (defaults shown)
 
@@ -65,8 +66,13 @@ Examples
 
 When you are editing or writing a post, switch to CODE view
 	
-type in the following tag <!--nextpage--> to create page breaks
-within each page add (including the starting page) <!--pagetitle:TYPE IN PAGE TITLE HERE-->
+type in the following tag to create page breaks
+
+	<!--nextpage--> 
+
+within each page add (including the starting page) 
+
+	<!--pagetitle:TYPE IN PAGE TITLE HERE-->
 	
 To display or navigate using page titles use the following function in your template files
 	
