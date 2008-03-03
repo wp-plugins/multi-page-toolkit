@@ -179,6 +179,8 @@ http://www.tarkan.info/archives/multipage/
 
 1. Example navigation methods with code required to create them.
 
+2. Interactive Demo of the types of navigation available using this plugin please visit :- http://www.tarkan.info/archives/multipage/
+
 == Arbitrary section ==
 
 * Version 1.1
