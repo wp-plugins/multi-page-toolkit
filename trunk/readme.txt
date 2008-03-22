@@ -1,10 +1,10 @@
 === Plugin Name ===
 Contributors: Tarkan Akdam
-Donate link: http://www.tarkan.info/tag/plugin/
-Tags: posts, link_pages, multi-page, quicktag, navigation, 2.3,  paginate, pagination, titles, heading, content menu
+Donate link: http://www.tarkan.info/20080106/tutorials/wordpress-plugin-multipage-tool-kit/
+Tags: posts, link_pages, multi-page, quicktag, navigation, 2.3, 2.5, paginate, pagination, titles, heading, content menu, content table, page titles
 Requires at least: 2.3
-Tested up to: 2.3.3
-Stable tag: 1.1
+Tested up to: 2.5
+Stable tag: 1.2
 
 Multi-page toolkit create titles for pages and configurable navigation features
 
@@ -14,9 +14,9 @@ Multi-page toolkit
 
 This plugin is the ultimate companion for people who use the multi-page capabilities of wordpress
 
-Using the <!--nextpage--> quicktag you can create multi-page posts, and this plugin gives you three functions that extend this functionality even more!!
+Using the `<!--nextpage-->` quicktag you can create multi-page posts, and this plugin gives you three functions that extend this functionality even more!!
 
-* Quicktag <!--pagetitle:-->
+* Quicktag `<!--pagetitle:-->`
 
 Using this quicktag you can create a title or header for each page in your multi-page post
 
@@ -39,8 +39,7 @@ Quick jump options include dropdown menu or a list menu using page numbers or pa
 
 Place this in your template file (e.g. index.php)
 
-	<?php if(function_exists('TA_display_pages')) { 
-	TA_display_pages(); } ?>
+	`<?php if(function_exists('TA_display_pages')) { TA_display_pages(); } ?>`
 
 Parameters (defaults shown)
 
@@ -68,11 +67,11 @@ When you are editing or writing a post, switch to CODE view
 	
 type in the following tag to create page breaks
 
-	<!--nextpage--> 
+	`<!--nextpage-->`
 
 within each page add (including the starting page) 
 
-	<!--pagetitle:TYPE IN PAGE TITLE HERE-->
+	`<!--pagetitle:TYPE IN PAGE TITLE HERE-->`
 	
 To display or navigate using page titles use the following function in your template files
 	
@@ -81,7 +80,7 @@ To display or navigate using page titles use the following function in your temp
 	
 Place this in your template file used to display posts (normally single.php)
 	
-	<?php TA_content_jump(); ?>
+	`<?php TA_content_jump(); ?>`
 	
 Parameters (defaults shown)
 	
@@ -103,13 +102,13 @@ Parameters (defaults shown)
 	$firstpagetext = 'On First Page' (text to display when on first or last page when using nav_type 1)
 	$lastpagetext = 'On Last Page'
 	
-**NOTE** nav_type is switched to 2 when post has no page titles !!!
+	**NOTE** nav_type is switched to 2 when post has no page titles !!!
 	
 Example
 	
-	<?php TA_content_jump('Page :','', 2, 2, 0, False, '&laquo;', '&raquo;'); ?>
+	`<?php TA_content_jump('Page :','', 2, 2, 0, False, '&laquo;', '&raquo;'); ?>`
 	
-CSS Styling
+**CSS Styling**
 	
 The plugin display will follow your existing CSS styling
 	
@@ -179,10 +178,12 @@ http://www.tarkan.info/archives/multipage/
 
 1. Example navigation methods with code required to create them.
 
-2. Interactive Demo of the types of navigation available using this plugin please visit :- http://www.tarkan.info/archives/multipage/
+== Change Log ==
 
-== Arbitrary section ==
-
+* Version 1.2 (20th March 2008)
+	* Added a check for trailing slashs and permalink structure for paging
+	* Cleaned up readme.txt for better formatting
+	* Checked compatibility with WP 2.5rc1
 * Version 1.1
 	* Add new quickjump method - list menu / content table
 * Version 1.0
