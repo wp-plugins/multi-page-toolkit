@@ -2,9 +2,9 @@
 
 /*
 Plugin Name: Multi-page Toolkit
-Plugin URI:  http://www.tarkan.info/
+Plugin URI:  http://www.tarkan.info/20080106/tutorials/wordpress-plugin-multipage-tool-kit/
 Description: Multipage post replacement for wp_link_page with page titling
-Version: 1.1
+Version: 1.2
 Author: Tarkan Akdam
 Author URI: http://www.tarkan.info
 
@@ -38,8 +38,11 @@ Author URI: http://www.tarkan.info
 
 CHANGELOG
 
-v1.1 - NEW quick jump method - page list / content menu
-v1.0 - Initial release
+v1.2 -	Added a check for trailing slashs and permalink structure for paging
+		Cleaned up readme.txt
+		Checked compatibility with WP 2.5rc1
+v1.1 -	NEW quick jump method - page list / content menu
+v1.0 -	Initial release
 
 */
 
@@ -83,6 +86,9 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 			$previoustitle = $pagetitles[$previouslink - 1];
 			$nexttitle = $pagetitles[$nextlink - 1];
 			
+			if ( '' == get_option('permalink_structure') || 'draft' == $post->post_status ) $page_link_type = '&amp;page=';
+			else $page_link_type = '/';
+			
 			if ( (empty($previoustitle)) && (empty($nexttitle)) && ($quick_type == 1) ) $nav_type = 2;
 			
 			if ($nav_number) {
@@ -94,11 +100,11 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 			if ($quick_type ==1) $output .= '<form name="content_jump">';
 			
 			if ($previouslink == 1) $previouslink_checked = '">';
-			else $previouslink_checked = $previouslink . '/">';
+			else $previouslink_checked = $page_link_type . $previouslink . '/">';
 
 			if ($page > 1) {
-				if ($nav_type == 2) $output .= '<a class="contentjumplink" href="' . get_permalink() . $previouslink_checked . $previouspagelink.'</a>';
-				if ($nav_type == 1) $output .= '<a class="contentjumptitle" href="' . get_permalink() . $previouslink_checked . $previoustitle.'</a>';
+				if ($nav_type == 2) $output .= '<a class="contentjumplink" href="' . untrailingslashit(get_permalink()) . $previouslink_checked . $previouspagelink.'</a>';
+				if ($nav_type == 1) $output .= '<a class="contentjumptitle" href="' . untrailingslashit(get_permalink()) . $previouslink_checked . $previoustitle.'</a>';
 				}
 			else {
 				if ($nav_type == 2) $output .= '<span class="contentjumplink" >'. $previouspagelink.'</span>';
@@ -119,8 +125,8 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 				for ( $i = 1; $i < ($numpages+1); $i = $i + 1 ) {
 					$pagename = $pagetitles[$i-1];				
 					
-					if ( 1 == $i ) $output .='<option value="'.get_permalink().'"' ;
-					else $output .='<option value="'.get_permalink().$i.'/"' ;
+					if ( 1 == $i ) $output .='<option value="'. get_permalink().'"' ;
+					else $output .='<option value="'. untrailingslashit(get_permalink()) . $page_link_type . $i.'/"' ;
 					
 					if ($page == $i) $output .= 'selected="selected"' ;
 				
@@ -144,10 +150,7 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 						if ( 1 == $i ) {
 							$output .= '<a class="contentjumpnumber" href="' . get_permalink() . '">';
 						} else {
-							if ( '' == get_option('permalink_structure') || 'draft' == $post->post_status )
-								$output .= '<a class="contentjumpnumber" href="' . get_permalink() . '&amp;page=' . $i . '">';
-							else
-								$output .= '<a class="contentjumpnumber" href="' . trailingslashit(get_permalink()) . user_trailingslashit($i, 'single_paged') . '">';
+							$output .= '<a class="contentjumpnumber" href="' . untrailingslashit(get_permalink()) . $page_link_type . $i . '/">';
 						}	
 						$output .= $i . '</a>';
 					}
@@ -171,7 +174,7 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 					}
 					else {
 						if ( 1 == $i ) $output .='<li><a class="contentlist" href="' . get_permalink().'"' ;
-						else $output .='<li><a class="contentlist" href="' . get_permalink().$i.'/"' ;
+						else $output .='<li><a class="contentlist" href="' . untrailingslashit(get_permalink()) . $page_link_type . $i.'/"' ;
 					
 						if (empty($pagename)) $output .= '>Page '.$i;
 						else {
@@ -188,8 +191,8 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 			}		
 			
 			if ($page < $numpages) {
-				if ($nav_type == 2) $output .= '<a class="contentjumplink" href="' . get_permalink() . $nextlink . '/" >'.$nextpagelink.'</a>';
-				if ($nav_type == 1) $output .= '<a class="contentjumptitle" href="' . get_permalink() . $nextlink . '/" >'.$nexttitle.'</a>';
+				if ($nav_type == 2) $output .= '<a class="contentjumplink" href="' . untrailingslashit(get_permalink()) . $page_link_type. $nextlink . '/" >'.$nextpagelink.'</a>';
+				if ($nav_type == 1) $output .= '<a class="contentjumptitle" href="' . untrailingslashit(get_permalink()) . $page_link_type . $nextlink . '/" >'.$nexttitle.'</a>';
 				}	
 			else {
 				if ($nav_type == 2) $output .= '<span class="contentjumplink" >'.$nextpagelink.'</span>';
