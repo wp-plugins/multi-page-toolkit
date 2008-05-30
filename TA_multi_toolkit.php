@@ -4,7 +4,7 @@
 Plugin Name: Multi-page Toolkit
 Plugin URI:  http://www.tarkan.info/20080106/tutorials/wordpress-plugin-multipage-tool-kit/
 Description: Multipage posts with page titling. Fully featured quick jump and navigation options. Easy to use with Visual editor integration.
-Version: 2.0
+Version: 2.1
 Author: Tarkan Akdam
 Author URI: http://www.tarkan.info
 
@@ -38,6 +38,7 @@ Author URI: http://www.tarkan.info
 
 CHANGELOG
 
+v2.1 -	Corrected Folder Naming Error
 v2.0 -	Added admin options page to auto insert navigation menu
 		Added View ALL pages link option
 		Visual Editor Integration (TinyMCE) buttons for nextpage and pagetitle (wordpress 2.5 and above only)
