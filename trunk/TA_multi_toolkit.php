@@ -277,7 +277,7 @@ function register_multipagebuttons($buttons) {
 // Load the TinyMCE plugin : editor_plugin.js (wp2.5)
 function add_multipagebuttons_plugin($plugin_array) {
 	$url = get_bloginfo('wpurl');
-	$plugin_array['multipagebuttons'] = $url . '/wp-content/plugins/multipage-toolkit/buttons/editor_plugin.js';
+	$plugin_array['multipagebuttons'] = $url . '/wp-content/plugins/multi-page-toolkit/buttons/editor_plugin.js';
 	return $plugin_array;
 }
  
