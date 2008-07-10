@@ -2,9 +2,9 @@
 
 /*
 Plugin Name: Multi-page Toolkit
-Plugin URI:  http://www.tarkan.info/20080106/tutorials/wordpress-plugin-multipage-tool-kit/
-Description: Multipage posts with page titling. Fully featured quick jump and navigation options. Easy to use with Visual editor integration.
-Version: 2.1
+Plugin URI:  http://www.tarkan.info/tag/multi-page
+Description: Multipage posts with page titling and single page view. Fully featured quick jump and navigation options. Easy to use with Visual editor integration.
+Version: 2.4
 Author: Tarkan Akdam
 Author URI: http://www.tarkan.info
 
@@ -37,7 +37,19 @@ Author URI: http://www.tarkan.info
 	Public License at http://www.gnu.org/copyleft/gpl.html
 
 CHANGELOG
-
+v2.4	Changed CSS style naming for the all page links
+v2.3 (internal release)
+		Added option to have custom page seperators (including javascript for adverts) on single (ALL) page display
+		Added function call to use options page settings from inside the theme files
+		Fixed badly coded string matching (Thanks to Andrei for the fix)
+		Fixed spelling error in button registration process (Thanks to Jonathan for spotting this)
+		Fixed maintain trailing slash consistency across site
+v2.2 (internal release)
+		Added ALL link Display Text Option
+		Added new CSS class for ALL link styling (contentjumpall , contentlistall)
+		Fixed bug where pagetitle followed by nextpage caused errors
+		Fixed tinymce js cache issues (hopefully..)
+		Fixed navigation for preview draft posts
 v2.1 -	Corrected Folder Naming Error
 v2.0 -	Added admin options page to auto insert navigation menu
 		Added View ALL pages link option
@@ -71,14 +83,59 @@ function TA_display_pages($firsttext = ' Page ' , $lasttext = ' ' , $midtext = '
 		return $output;
 	}	
 }
+function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $quick_type = 1, $nav_type = 2, $nav_number = TRUE, $previouspagelink = '&laquo;', $nextpagelink = '&raquo;', $firstpagetext = 'On First Page', $lastpagetext = 'On Last Page', $display_all = TRUE, $display_all_text = 'View All') {
+	if ($before == '1') $args = 1;
+	elseif ($before == '2') $args = 2;
+	else $args = compact('before', 'after', 'title_number', 'quick_type', 'nav_type', 'nav_number', 'previouspagelink', 'nextpagelink', 'firstpagetext', 'lastpagetext', 'display_all', 'display_all_text');
+	
+	echo TA_navigation($args);
+}
 
-function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $quick_type = 1, $nav_type = 2, $nav_number = TRUE, $previouspagelink = '&laquo;', $nextpagelink = '&raquo;', $firstpagetext = 'On First Page', $lastpagetext = 'On Last Page', $display_all = TRUE, $show_output = FALSE ) {
+function TA_navigation($args= '') {
 
-	global $numpages, $multipage, $page, $posts;
+	$defaults = array ('before' => '<p>', 'after' => '</p>', 'title_number' => 2, 'quick_type' => 1, 'nav_type' => 2, 'nav_number' => TRUE, 'previouspagelink' => '&laquo;', 'nextpagelink' => '&raquo;', 'firstpagetext' => 'On First Page', 'lastpagetext' => 'On Last Page', 'display_all' => TRUE, 'display_all_text' => 'View All', 'echo' => TRUE);
+
+	// Check if using option page settings or custom setting in function call
+	If ($args == 1) {
+			$ta_multipage = get_option("ta_multipage"); 
+			$before = 			$ta_multipage['mp1_before'];
+			$after = 			$ta_multipage['mp1_after'];
+			$title_number = 	$ta_multipage['mp1_title_number'];
+			$quick_type = 		$ta_multipage['mp1_quick_type'];
+			$nav_type = 		$ta_multipage['mp1_nav_type'];
+			$nav_number = 		$ta_multipage['mp1_nav_number'];
+			$previouspagelink = $ta_multipage['mp1_previouspagelink'];
+			$nextpagelink = 	$ta_multipage['mp1_nextpagelink'];
+			$firstpagetext = 	$ta_multipage['mp1_firstpagetext'];
+			$lastpagetext = 	$ta_multipage['mp1_lastpagetext'];
+			$display_all = 		$ta_multipage['mp1_display_all'];
+			$display_all_text = $ta_multipage['mp1_display_all_text'];
+	}
+	ElseIf ($args == 2) {
+			$ta_multipage = get_option("ta_multipage"); 
+			$before = 			$ta_multipage['mp2_before'];
+			$after = 			$ta_multipage['mp2_after'];
+			$title_number = 	$ta_multipage['mp2_title_number'];
+			$quick_type = 		$ta_multipage['mp2_quick_type'];
+			$nav_type = 		$ta_multipage['mp2_nav_type'];
+			$nav_number = 		$ta_multipage['mp2_nav_number'];
+			$previouspagelink = $ta_multipage['mp2_previouspagelink'];
+			$nextpagelink = 	$ta_multipage['mp2_nextpagelink'];
+			$firstpagetext = 	$ta_multipage['mp2_firstpagetext'];
+			$lastpagetext = 	$ta_multipage['mp2_lastpagetext'];
+			$display_all = 		$ta_multipage['mp2_display_all'];
+			$display_all_text = $ta_multipage['mp2_display_all_text'];
+	}
+	Else {
+			$r = wp_parse_args( $args, $defaults );
+			extract( $r, EXTR_SKIP );
+	}
+
+	global $numpages, $multipage, $page, $posts, $post;
 
 	if ( $multipage ) {
 	
-			$pagetitlestring = '/<!--pagetitle:(.*)-->/';
+			$pagetitlestring = '/<!--pagetitle:(.*?)-->/';
 			preg_match_all($pagetitlestring, $posts[0]->post_content, $titlesarray, PREG_PATTERN_ORDER);
 			$pagetitles = $titlesarray[1];
 			$ta_pagetitles = $titlesarray[1];
@@ -89,10 +146,19 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 			$previoustitle = $pagetitles[$previouslink - 1];
 			$nexttitle = $pagetitles[$nextlink - 1];
 			
+			$slash_yes = '';  // assume no trailing slash in permalink unless detected otherwise later
+			
 			if (get_query_var('all') == '1') $allpage_link = TRUE;
 			
-			if ( '' == get_option('permalink_structure') || 'draft' == $post->post_status ) $page_link_type = '&amp;page=';
-			else $page_link_type = '/';
+			if ( '' == get_option('permalink_structure') || 'draft' == $post->post_status ) {
+				$page_link_type = '&amp;page=';
+				$page_link_all = '&amp;all=1';
+			} else {
+				$page_link_type = '/';
+				$page_link_all = '/all/1';
+				$url = get_permalink();
+				if ( '/' == $url[strlen($url)-1]) $slash_yes = '/'; 
+			}
 			
 			if ( (empty($previoustitle)) && (empty($nexttitle)) && ($quick_type == 1) ) $nav_type = 2;
 			
@@ -105,7 +171,7 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 			if ($quick_type ==1) $output .= '<form name="content_jump">';
 			
 			if ($previouslink == 1) $previouslink_checked = '">';
-			else $previouslink_checked = $page_link_type . $previouslink . '/">';
+			else $previouslink_checked = $page_link_type . $previouslink . $slash_yes .'">';
 
 			if ($page > 1) {
 				if ($nav_type == 2) $output .= '<a class="contentjumplink" href="' . untrailingslashit(get_permalink()) . $previouslink_checked . $previouspagelink.'</a>';
@@ -131,11 +197,11 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 					$pagename = $pagetitles[$i-1];				
 					
 					if ( 1 == $i ) $output .='<option value="'. get_permalink().'"' ;
-					else $output .='<option value="'. untrailingslashit(get_permalink()) . $page_link_type . $i.'/"' ;
+					else $output .='<option value="'. untrailingslashit(get_permalink()) . $page_link_type . $i. $slash_yes . '"' ;
 					
 					if ($page == $i) $output .= 'selected="selected"' ;
 				
-					if (empty($pagename)) $output .= '>Page '.$i;
+					if (empty($pagename)) $output .= '>Page ' . $i;
 					else {
 						$output .= '>';
 						if ($title_number == 0) $output.= $pagename ;
@@ -145,11 +211,11 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 					$output .='</option>';	
 				}
 				if ($display_all) {
-					$output .='<option value="'. untrailingslashit(get_permalink()) .'/all/1"' ;
+					$output .='<option value="'. untrailingslashit(get_permalink()) . $page_link_all . '"' ;
 					if ($allpage_link) $output .= 'selected="selected"' ;
 						$output .= '>';
-						if ($title_number == 2) $output.= $numpages + 1 .'. View All' ;
-						else $output.= 'View All';			
+						if ($title_number == 2) $output.= $numpages + 1 . '. '. $display_all_text ;
+						else $output.= $display_all_text;			
 						$output .='</option>';
 				}
 				$output .= '</select>';
@@ -163,15 +229,15 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 						if ( 1 == $i ) {
 							$output .= '<a class="contentjumpnumber" href="' . get_permalink() . '">';
 						} else {
-							$output .= '<a class="contentjumpnumber" href="' . untrailingslashit(get_permalink()) . $page_link_type . $i . '/">';
+							$output .= '<a class="contentjumpnumber" href="' . untrailingslashit(get_permalink()) . $page_link_type . $i . $slash_yes . '">';
 						}	
 						$output .= $i . '</a>';
 					}
 					if ($page == $i && !$allpage_link) $output .= '<span class="contentjumpnumber">'.$i.'</span>';	
 				}
 				if ($display_all) {
-					if ($allpage_link) $output .= '<span class="contentjumpnumber">ALL</span>';
-					else $output .= '<a class="contentjumpnumber" href="'. untrailingslashit(get_permalink()) .'/all/1">ALL</a>' ;
+					if ($allpage_link) $output .= '<span class="contentjumpall">' . $display_all_text . '</span>';
+					else $output .= '<a class="contentjumpall" href="'. untrailingslashit(get_permalink()) . $page_link_all . '">'. $display_all_text .'</a>' ;
 				}
 			}
 
@@ -191,7 +257,7 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 					}
 					else {
 						if ( 1 == $i ) $output .='<li><a class="contentlist" href="' . get_permalink().'"' ;
-						else $output .='<li><a class="contentlist" href="' . untrailingslashit(get_permalink()) . $page_link_type . $i.'/"' ;
+						else $output .='<li><a class="contentlist" href="' . untrailingslashit(get_permalink()) . $page_link_type . $i. $slash_yes . '"' ;
 					
 						if (empty($pagename)) $output .= '>Page '.$i;
 						else {
@@ -204,16 +270,16 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 					}	
 				}
 				if ($display_all) {
-						if ($allpage_link) $output .= '<li><span class="contentlist">All Pages</span></li>';
-						else $output .= '<li><a class="contentlist" href="'. untrailingslashit(get_permalink()) .'/all/1">View All</a></li>' ;
+						if ($allpage_link) $output .= '<li class="contentlistall">' . $display_all_text .'</li>';
+						else $output .= '<li class="contentlistall"><a href="'. untrailingslashit(get_permalink()) . $page_link_all . '">' . $display_all_text . '</a></li>' ;
 					}	
 					
 				$output .= '</ol>';
 			}		
 			
 			if ($page < $numpages && !$allpage_link) {
-				if ($nav_type == 2) $output .= '<a class="contentjumplink" href="' . untrailingslashit(get_permalink()) . $page_link_type. $nextlink . '/" >'.$nextpagelink.'</a>';
-				if ($nav_type == 1) $output .= '<a class="contentjumptitle" href="' . untrailingslashit(get_permalink()) . $page_link_type . $nextlink . '/" >'.$nexttitle.'</a>';
+				if ($nav_type == 2) $output .= '<a class="contentjumplink" href="' . untrailingslashit(get_permalink()) . $page_link_type. $nextlink . $slash_yes . '" >'.$nextpagelink.'</a>';
+				if ($nav_type == 1) $output .= '<a class="contentjumptitle" href="' . untrailingslashit(get_permalink()) . $page_link_type . $nextlink . $slash_yes . '" >'.$nexttitle.'</a>';
 				}	
 			else {
 				if ($nav_type == 2) $output .= '<span class="contentjumplink" >'.$nextpagelink.'</span>';
@@ -224,21 +290,36 @@ function TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $q
 	
 	$output .= $after;
 	
-	if ($show_output) return $output ;
-	else echo $output;
+	return $output ;
 	}
 }
 
 // Init Plugin
 
-add_filter('the_content', 'allpage_show', 1);
+add_filter('the_content', 'allpage_show', 0);
 function allpage_show($content) {
-	global $multipage, $page, $posts; 
+	global $multipage, $page, $posts, $numpages; 
 	
 	$all_page = get_query_var('all');
 		
 	if ($multipage && $all_page == '1' ) {
-		$content = $posts[0]->post_content;
+		
+		$ta_multipage = get_option("ta_multipage");
+		if ($ta_multipage['seperator'] == '0') $content = $posts[0]->post_content;
+		if ($ta_multipage['seperator'] == '1') {
+			$pagetitlestring = '/<!--pagetitle:(.*?)-->/';
+			preg_match_all($pagetitlestring, $posts[0]->post_content, $titlesarray, PREG_PATTERN_ORDER);
+			$pagetitles = $titlesarray[1];
+			$content = '<p><h2 style="text-align:center">' . $pagetitles[0] . '</h2></p>' . $posts[0]->post_content;
+
+			for ( $i = 1; $i < ($numpages+1); $i = $i + 1 ) {
+				$content = preg_replace('/<!--nextpage-->/', '<p><h2 style="text-align:center">' . $pagetitles[$i] . '</h2></p>', $content, 1);
+				}
+		}
+		if ($ta_multipage['seperator'] == '2') {
+			$code = stripslashes($ta_multipage['seperator_code']);
+			$content = preg_replace('/<!--nextpage-->/', '<div align=center>' . $code . '</div>', $posts[0]->post_content);
+		}
 	}
 	return $content;
 }
@@ -271,19 +352,25 @@ function multipage_addbuttons() {
 }
  
 function register_multipagebuttons($buttons) {
-   	array_push($buttons, "seperator", "nextpage", "seperator", "pagetitle");
+   	array_push($buttons, "separator", "nextpage", "pagetitle");
    	return $buttons;
 }
  
 // Load the TinyMCE plugin : editor_plugin.js (wp2.5)
 function add_multipagebuttons_plugin($plugin_array) {
-	$url = get_bloginfo('wpurl');
-	$plugin_array['multipagebuttons'] = $url . '/wp-content/plugins/multi-page-toolkit/buttons/editor_plugin.js';
+	$plugin_array['multipagebuttons'] = get_option( 'siteurl' ) . '/wp-content/plugins/multi-page-toolkit/buttons/editor_plugin.js';
 	return $plugin_array;
 }
  
 // init process for button control
 add_action('init', 'multipage_addbuttons');
+
+function my_refresh_mce($ver) {
+   $ver += 3; // or $ver .= 3; or ++$ver; etc.
+   return $ver;
+}
+add_filter('tiny_mce_version', 'my_refresh_mce');
+
 
 // Options Page
 
@@ -292,9 +379,8 @@ function TA_multi_toolkit_auto($content){
 	$ta_multipage = get_option("ta_multipage");
 	if (! is_single()) return $content;
 
-	$output1 = TA_content_jump( $ta_multipage['mp1_before'],$ta_multipage['mp1_after'],$ta_multipage['mp1_title_number'],$ta_multipage['mp1_quick_type'],$ta_multipage['mp1_nav_type'],$ta_multipage['mp1_nav_number'],$ta_multipage['mp1_previouspagelink'],$ta_multipage['mp1_nextpagelink'],$ta_multipage['mp1_firstpagetext'],$ta_multipage['mp1_lastpagetext'],$ta_multipage['mp1_display_all'], TRUE ) ;
-
-	$output2 = TA_content_jump( $ta_multipage['mp2_before'],$ta_multipage['mp2_after'],$ta_multipage['mp2_title_number'],$ta_multipage['mp2_quick_type'],$ta_multipage['mp2_nav_type'],$ta_multipage['mp2_nav_number'],$ta_multipage['mp2_previouspagelink'],$ta_multipage['mp2_nextpagelink'],$ta_multipage['mp2_firstpagetext'],$ta_multipage['mp2_lastpagetext'],$ta_multipage['mp2_display_all'], TRUE ) ;	
+	$output1 = TA_navigation(1) ;
+	$output2 = TA_navigation(2) ;	
 	
 	$output1 = '<p style="text-align:' . $ta_multipage['mp1_div_align'] . '">' . $output1 . '</p>';
 	$output2 = '<p style="text-align:' . $ta_multipage['mp2_div_align'] . '">' . $output2 . '</p>';
@@ -304,7 +390,6 @@ function TA_multi_toolkit_auto($content){
 	if ( $ta_multipage["mp2_insert_bottom"] == 'True' ) $content = $content . $output2;	
 	return $content;
 }
-
 
 add_action('admin_menu', 'ta_multipage_add_options_page');
 function ta_multipage_add_options_page() {
@@ -333,6 +418,7 @@ function ta_multipage_add_options_subpanel() {
 			'mp1_firstpagetext'		=> $_POST['mp1_firstpagetext'],
 			'mp1_lastpagetext'		=> $_POST['mp1_lastpagetext'],
 			'mp1_display_all'		=> $_POST['mp1_display_all'],
+			'mp1_display_all_text'	=> $_POST['mp1_display_all_text'],			
 			'mp1_div_align'			=> $_POST['mp1_div_align'],
 			'mp1_insert_top'		=> $_POST['mp1_insert_top'],
 			'mp1_insert_bottom'		=> $_POST['mp1_insert_bottom'],
@@ -347,9 +433,12 @@ function ta_multipage_add_options_subpanel() {
 			'mp2_firstpagetext'		=> $_POST['mp2_firstpagetext'],
 			'mp2_lastpagetext'		=> $_POST['mp2_lastpagetext'],
 			'mp2_display_all'		=> $_POST['mp2_display_all'],
+			'mp2_display_all_text'	=> $_POST['mp2_display_all_text'],	
 			'mp2_div_align'			=> $_POST['mp2_div_align'],
 			'mp2_insert_top'		=> $_POST['mp2_insert_top'],
-			'mp2_insert_bottom'		=> $_POST['mp2_insert_bottom']
+			'mp2_insert_bottom'		=> $_POST['mp2_insert_bottom'],
+			'seperator'				=> $_POST['seperator'],
+			'seperator_code'		=> $_POST['seperator_code']
 		);
 
 		if ($ta_multipage_saved != $ta_multipage)
@@ -362,7 +451,7 @@ function ta_multipage_add_options_subpanel() {
 	$ta_multipage = get_option("ta_multipage");
 	
 	// Set defaults
-	if ($ta_multipage == '' OR $_POST["ta_multipage_Reset"]) {
+	if ($ta_multipage == '' OR $_POST["ta_multipage_Reset"] OR !$ta_multipage['seperator']) {
 		$ta_multipage = array (
 			'mp1_before' 			=> '',
 			'mp1_after'				=> '',
@@ -375,6 +464,7 @@ function ta_multipage_add_options_subpanel() {
 			'mp1_firstpagetext'		=> 'On First Page',
 			'mp1_lastpagetext'		=> 'On Last Page',
 			'mp1_display_all'		=> 'True',
+			'mp1_display_all_text'	=> 'View All',			
 			'mp1_div_align'			=> 'center',
 			'mp1_insert_top'		=> 'False',
 			'mp1_insert_bottom'		=> 'False',
@@ -389,20 +479,28 @@ function ta_multipage_add_options_subpanel() {
 			'mp2_firstpagetext'		=> 'On First Page',
 			'mp2_lastpagetext'		=> 'On Last Page',
 			'mp2_display_all'		=> 'True',
+			'mp2_display_all_text'	=> 'ALL',
 			'mp2_div_align'			=> 'center',
 			'mp2_insert_top'		=> 'False',
-			'mp2_insert_bottom'		=> 'False'
+			'mp2_insert_bottom'		=> 'False',
+			'seperator'				=> '0',
+			'seperator_code'		=> "--~~~~~~~~~~~~--"
 		);
 		update_option("ta_multipage", $ta_multipage);
 		update_option("ta_multipage_priority", 99);
 	}
+
+	// removes slahes to display code correctly in textarea
+	$code = stripslashes($ta_multipage['seperator_code']);
 	
 ?>
 <div class="wrap">
 	<h2 id="write-post"><?php _e("Multipage Toolkit Auto Insert Options",'TA_multi_toolkit');?></h2>
 	<table><tr>
     	<td><?php _e("Tarkan Akdam's Multi-page toolkit creates pagetitles for multipage posts with highly configurable navigation and quickjump pagination features, ultimate replacement for the builtin wp_link_pages() function without the code. ",'TA_multi_toolkit');?>
-    More information can be found at <a href="http://www.tarkan.info/tag/multi-page" target="_blank">http://www.tarkan.info</a> - Please consider making a donation if you find this plugin useful. It helps pay for my hosting.</td>
+    More information can be found at <a href="http://www.tarkan.info/tag/multi-page" target="_blank">http://www.tarkan.info</a> - Please consider making a donation if you find this plugin useful. It helps pay for my hosting.
+    <br/>
+    <strong>It is recommended to reset settings after updating the Multi-page Toolkit.</strong></td>
     	<td><form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UNKNOWN" enctype="application/x-www-form-urlencoded" method="post">
 <input maxlength="2147483647" name="cmd" size="20" type="hidden" value="_s-xclick" />
 <input alt="PayPal - The safer, easier way to pay online." maxlength="2147483647" name="submit" size="20" src="https://www.paypal.com/en_GB/i/btn/btn_donateCC_LG.gif" type="image" /> <img src="https://www.paypal.com/en_GB/i/scr/pixel.gif" border="0" alt="" width="1" height="1" /><br />
@@ -436,14 +534,23 @@ function ta_multipage_add_options_subpanel() {
         </td>
 	</tr>
     <tr>
+    	<th><?php _e("Manual Insertion:",'TA_multi_toolkit');?></th>
+        <td>Use the following code within your theme files
+        <br/>&lt;?php TA_display_pages(1); ?&gt;
+        </td>
+	</tr>
+    <tr>
     	<th><?php _e("Display ALL Link:",'TA_multi_toolkit');?></th>
     	<td>
         <?php	if ( $ta_multipage["mp1_display_all"] == 'True' ) {
-		echo '<input name="mp1_display_all" type="checkbox" value="True" checked>';
-		} else {
-		echo '<input name="mp1_display_all" type="checkbox" value="True">'; }
+				echo '<input name="mp1_display_all" type="checkbox" value="True" checked>';
+				} else {
+				echo '<input name="mp1_display_all" type="checkbox" value="True">'; }
 		?>
         <?php _e("Display multipage post on a single page",'TA_multi_toolkit');?>
+        <br />
+        <input type="text" name="mp1_display_all_text" value="<?php echo $ta_multipage["mp1_display_all_text"]; ?>" />
+        <?php _e(" Link title",'TA_multi_toolkit');?>
         </td>
     </tr>
 	<tr>
@@ -560,6 +667,12 @@ function ta_multipage_add_options_subpanel() {
         </td>
 	</tr>
     <tr>
+    	<th><?php _e("Manual Insertion:",'TA_multi_toolkit');?></th>
+        <td>Use the following code within your theme files
+        <br/>&lt;?php TA_display_pages(2); ?&gt;
+        </td>
+	</tr>
+    <tr>
     	<th><?php _e("Display ALL Link:",'TA_multi_toolkit');?></th>
     	<td>
         <?php	if ( $ta_multipage["mp2_display_all"] == 'True' ) {
@@ -568,6 +681,9 @@ function ta_multipage_add_options_subpanel() {
 				echo '<input name="mp2_display_all" type="checkbox" value="True">'; }
 		?>
         <?php _e("Display multipage post on a single page",'TA_multi_toolkit');?>
+        <br />
+        <input type="text" name="mp2_display_all_text" value="<?php echo $ta_multipage["mp2_display_all_text"]; ?>" />
+        <?php _e(" Link title",'TA_multi_toolkit');?>
         </td>
     </tr>
 	<tr>
@@ -658,7 +774,26 @@ function ta_multipage_add_options_subpanel() {
     </tr>
 </table>
 </div>
-<div>
+<div style="clear:both;">
+<table class="form-table">
+	<tr>
+    	<th><?php _e("Page Seperator on ALL PAGE view:",'TA_multi_toolkit'); ?></th>
+        <td valign="top">
+		<?php $seperator = $ta_multipage["seperator"]; ?>
+		<select name="seperator" >
+		<option value="0" <?php if($seperator == '0') echo 'selected' ?>><?php _e("No Seperator",'TA_multi_toolkit'); ?></option>
+		<option value="1" <?php if($seperator == '1') echo 'selected' ?>><?php _e("Use Page Titles",'TA_multi_toolkit'); ?></option>
+		<option value="2" <?php if($seperator == '2') echo 'selected' ?>><?php _e("Custom Code >>>",'TA_multi_toolkit'); ?></option>
+        </select>
+		</td>
+        <th><?php _e("HTML/CODE (e.g. javascript) to use as seperator (such as code for advertising) :",'TA_multi_toolkit');?></th>
+        <td>
+        <textarea name="seperator_code" cols="60" rows="8"><?php echo($code); ?></textarea>
+        </td>
+    </tr>
+</table>
+</div>
+<div style="clear:both;">
 <table class="form-table">
 	<tr class="submit">
     	<td><input type="submit" value="<?php _e("Update Options &raquo;",'TA_multi_toolkit');?>" name="ta_multipage_Submit" /></td>
