@@ -1,12 +1,12 @@
 === Plugin Name ===
 Contributors: Tarkan Akdam
 Donate link: http://www.tarkan.info/20080106/tutorials/wordpress-plugin-multipage-tool-kit/
-Tags: posts, link_pages, multi-page, quicktag, navigation, 2.5, paginate, pagination, titles, heading, content menu, content table, page titles
+Tags: posts, link_pages, multi-page, quicktag, navigation, 2.5, paginate, pagination, titles, heading, content menu, content table, page titles, seo
 Requires at least: 2.3
 Tested up to: 2.5.1
-Stable tag: 2.1
+Stable tag: 2.4
 
-Multi-page toolkit create titles for pages and configurable navigation features. Single (all) page view option. Easy to use. Integrated with the Visual Editor. No Code necessary - unless you want to!
+Multi-page toolkit create titles for pages and configurable navigation features. Single (all) page view option with custom seperator (great for adverts). Easy to use. Integrated with the Visual Editor. No Code necessary - unless you want to!
 
 == Description ==
 
@@ -26,6 +26,7 @@ This function give you several pagination options choose from simply previous an
 Quick jump options include dropdown menu or a list menu using page numbers or page titles. 
 
 New option to display all pages on a single page (ALL page link).
+New option to have a custom seperator between pages on the single page view, great for adding advertising code or just to make it look pretty.
 
 * TA_display_pages
 
@@ -36,6 +37,10 @@ With this function you can quickly and easily display how many pages a particula
 1. Unzip the file archive and put the directory into your "plugins" folder (/wp-content/plugins/)
 2. Activate the plugin
 3. Adjust the auto insert options in the settings page (admin / settings / Multipage Toolkit)
+4. If you have upgraded from a previous version I suggest reseting to default in the options page
+
+** PLEASE NOTE **
+The function call names and parameter settings have been changed since version 2.1. Please check the code you use in your theme if you have added navigation jumps directly.
 
 That is all there is to it - for useage instructions please read the FAQ.
 
@@ -70,10 +75,19 @@ Examples
 				
 ** To use TA_content_jump **
 	
-Place this in your template file used to display posts (normally single.php)
+Place this in your template file used to display posts (normally single.php) in the location where you want it to appear. You can call the parameters set from the options page.
+
+To display the options from the 1st instance settings use :-	
+	`<?php TA_display_pages(1); ?>`
 	
-	`<?php TA_content_jump(); ?>`
+To display the options from the 2nd instance settings use :-	
+	`<?php TA_display_pages(2); ?>`
 	
+
+You can still set the parameters directly in the function call if you prefer, they are set out below. Be careful the function call name is different.
+
+TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $quick_type = 1, $nav_type = 2, $nav_number = TRUE, $previouspagelink = '&laquo;', $nextpagelink = '&raquo;', $firstpagetext = 'On First Page', $lastpagetext = 'On Last Page', $display_all = TRUE, $display_all_text = 'View All')
+
 Parameters (defaults shown)
 	
 	$before = '<p>'
@@ -95,12 +109,9 @@ Parameters (defaults shown)
 	$lastpagetext = 'On Last Page'
 	
 	$display_all = TRUE	(Display ALL page link on navigation)
+	$display_all_text = 'View All' (ALL page link title / text)
 	
 	**NOTE** nav_type is switched to 2 when post has no page titles !!!
-	
-Example
-	
-	`<?php TA_content_jump('Page :','', 2, 2, 0, False, '&laquo;', '&raquo;'); ?>`
 	
 
 **CSS Styling**
@@ -120,6 +131,10 @@ You can do more targeted styling by adding the following ID's in to your templat
 							vertical-align:middle; 
 							font-weight: bold; 
 							padding: 0 3px 0px 3px}
+	
+	a.contentjumpall {  }
+	
+	span.contentjumpall {   }	
 
 	span.contentjumptitle { vertical-align: middle ; 
 							color: #aaa; 
@@ -147,6 +162,8 @@ You can do more targeted styling by adding the following ID's in to your templat
 	span.contentlist { color: #aaa; font-weight: bold; }
 	
 	a.contentlist { padding: 0px; }
+	
+	li.contentlistall { }
 
 	span.contentjumpnumber { 	vertical-align: middle ;
 								color: #ccc; 
@@ -220,8 +237,27 @@ http://www.tarkan.info/archives/multipage/
 1. Example navigation methods with code required to create them.
 
 == Change Log ==
-* Version 2.1 
+* Version 2.4
+	* Public release
+	* Changed CSS style naming for the all page links
+
+* Version 2.3 (internal release)
+	* Added option to have custom page seperators (including javascript for adverts) on single (ALL) page display
+	* Added function call to use options page settings from inside the theme files
+	* Fixed badly coded string matching (Thanks to Andrei for the fix)
+	* Fixed spelling error in button registration process (Thanks to Jonathan for spotting this)
+	* Fixed maintain trailing slash consistency across site
+		
+* Version 2.2 (internal release)
+	* Added ALL link Display Text Option
+	* Added new CSS class for ALL link styling (contentjumpall , contentlistall)
+	* Fixed bug where pagetitle followed by nextpage caused errors
+	* Fixed tinymce js cache issues (hopefully..)
+	* Fixed navigation for preview draft posts
+
+* Version 2.1
 	* Corrected Folder Naming Error
+
 * Version 2.0 (28th May 2008)
 	* Major update
 	* Fully integrated with the Visual Editor (nextpage and pagetitle buttons added)(WP 2.5 and above only)
