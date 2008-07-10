@@ -4,7 +4,7 @@
 Plugin Name: Multi-page Toolkit
 Plugin URI:  http://www.tarkan.info/tag/multi-page
 Description: Multipage posts with page titling and single page view. Fully featured quick jump and navigation options. Easy to use with Visual editor integration.
-Version: 2.4
+Version: 2.5
 Author: Tarkan Akdam
 Author URI: http://www.tarkan.info
 
@@ -37,6 +37,7 @@ Author URI: http://www.tarkan.info
 	Public License at http://www.gnu.org/copyleft/gpl.html
 
 CHANGELOG
+v2.5	SVN broke upload - uploading again
 v2.4	Changed CSS style naming for the all page links
 v2.3 (internal release)
 		Added option to have custom page seperators (including javascript for adverts) on single (ALL) page display

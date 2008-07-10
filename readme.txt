@@ -4,7 +4,7 @@ Donate link: http://www.tarkan.info/20080106/tutorials/wordpress-plugin-multipag
 Tags: posts, link_pages, multi-page, quicktag, navigation, 2.5, paginate, pagination, titles, heading, content menu, content table, page titles, seo
 Requires at least: 2.3
 Tested up to: 2.5.1
-Stable tag: 2.4
+Stable tag: 2.5
 
 Multi-page toolkit create titles for pages and configurable navigation features. Single (all) page view option with custom seperator (great for adverts). Easy to use. Integrated with the Visual Editor. No Code necessary - unless you want to!
 
@@ -237,6 +237,8 @@ http://www.tarkan.info/archives/multipage/
 1. Example navigation methods with code required to create them.
 
 == Change Log ==
+* Version 2.5
+	* SVN broke the upload - so uploading again
 * Version 2.4
 	* Public release
 	* Changed CSS style naming for the all page links
