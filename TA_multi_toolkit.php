@@ -4,7 +4,7 @@
 Plugin Name: Multi-page Toolkit
 Plugin URI:  http://www.tarkan.info/tag/multi-page
 Description: Multipage posts with page titling and single page view. Fully featured quick jump and navigation options. Easy to use with Visual editor integration.
-Version: 2.5
+Version: 2.6
 Author: Tarkan Akdam
 Author URI: http://www.tarkan.info
 
@@ -37,6 +37,10 @@ Author URI: http://www.tarkan.info
 	Public License at http://www.gnu.org/copyleft/gpl.html
 
 CHANGELOG
+v2.6	Added auto-insert function for Pages
+		Checked compatible with Wordpress 2.6.1
+		Fixed options reseting to default when no page seperator selected
+		Fixed text entry boxes now accept html code without breaking
 v2.5	SVN broke upload - uploading again
 v2.4	Changed CSS style naming for the all page links
 v2.3 (internal release)
@@ -343,6 +347,14 @@ function AllPageEndpointQueryVarsFilter($vars){
 
 // TinyMCE stuff
 
+// init process for button control
+
+function my_refresh_mce($ver) {
+   $ver += 3; // or $ver .= 3; or ++$ver; etc.
+   return $ver;
+}
+add_filter('tiny_mce_version', 'my_refresh_mce');
+
 function multipage_addbuttons() {
  	// Check if WordPress 2.5+ (TinyMCE 3.x)
 	global $wp_db_version;
@@ -362,29 +374,27 @@ function add_multipagebuttons_plugin($plugin_array) {
 	$plugin_array['multipagebuttons'] = get_option( 'siteurl' ) . '/wp-content/plugins/multi-page-toolkit/buttons/editor_plugin.js';
 	return $plugin_array;
 }
- 
-// init process for button control
+
 add_action('init', 'multipage_addbuttons');
-
-function my_refresh_mce($ver) {
-   $ver += 3; // or $ver .= 3; or ++$ver; etc.
-   return $ver;
-}
-add_filter('tiny_mce_version', 'my_refresh_mce');
-
 
 // Options Page
 
 add_filter('the_content', 'TA_multi_toolkit_auto', get_option("ta_multipage_priority"));	
 function TA_multi_toolkit_auto($content){
 	$ta_multipage = get_option("ta_multipage");
-	if (! is_single()) return $content;
+	if (! is_single() && ! is_page()) return $content;
 
 	$output1 = TA_navigation(1) ;
 	$output2 = TA_navigation(2) ;	
 	
 	$output1 = '<p style="text-align:' . $ta_multipage['mp1_div_align'] . '">' . $output1 . '</p>';
 	$output2 = '<p style="text-align:' . $ta_multipage['mp2_div_align'] . '">' . $output2 . '</p>';
+
+	if ( is_page() ) {
+		if ( $ta_multipage['mp1_insert_pages'] == False) $output1 = '' ;
+		if ( $ta_multipage['mp2_insert_pages'] == False) $output2 = '' ;
+	}
+	
 	if ( $ta_multipage["mp2_insert_top"] == 'True' ) $content = $output2 . $content ;
 	if ( $ta_multipage["mp1_insert_top"] == 'True' ) $content = $output1 . $content ;
 	if ( $ta_multipage["mp1_insert_bottom"] == 'True' ) $content = $content . $output1;
@@ -423,6 +433,7 @@ function ta_multipage_add_options_subpanel() {
 			'mp1_div_align'			=> $_POST['mp1_div_align'],
 			'mp1_insert_top'		=> $_POST['mp1_insert_top'],
 			'mp1_insert_bottom'		=> $_POST['mp1_insert_bottom'],
+			'mp1_insert_pages'		=> $_POST['mp1_insert_pages'],
 			'mp2_before' 			=> $_POST['mp2_before'],
 			'mp2_after'				=> $_POST['mp2_after'],
 			'mp2_title_number'		=> $_POST['mp2_title_number'],
@@ -438,6 +449,7 @@ function ta_multipage_add_options_subpanel() {
 			'mp2_div_align'			=> $_POST['mp2_div_align'],
 			'mp2_insert_top'		=> $_POST['mp2_insert_top'],
 			'mp2_insert_bottom'		=> $_POST['mp2_insert_bottom'],
+			'mp2_insert_pages'		=> $_POST['mp2_insert_pages'],
 			'seperator'				=> $_POST['seperator'],
 			'seperator_code'		=> $_POST['seperator_code']
 		);
@@ -452,7 +464,7 @@ function ta_multipage_add_options_subpanel() {
 	$ta_multipage = get_option("ta_multipage");
 	
 	// Set defaults
-	if ($ta_multipage == '' OR $_POST["ta_multipage_Reset"] OR !$ta_multipage['seperator']) {
+	if ($ta_multipage == '' OR $_POST["ta_multipage_Reset"]) {
 		$ta_multipage = array (
 			'mp1_before' 			=> '',
 			'mp1_after'				=> '',
@@ -469,6 +481,7 @@ function ta_multipage_add_options_subpanel() {
 			'mp1_div_align'			=> 'center',
 			'mp1_insert_top'		=> 'False',
 			'mp1_insert_bottom'		=> 'False',
+			'mp1_insert_pages'		=> 'False',
 			'mp2_before' 			=> 'Page :',
 			'mp2_after'				=> '',
 			'mp2_title_number'		=> 2,
@@ -484,7 +497,8 @@ function ta_multipage_add_options_subpanel() {
 			'mp2_div_align'			=> 'center',
 			'mp2_insert_top'		=> 'False',
 			'mp2_insert_bottom'		=> 'False',
-			'seperator'				=> '0',
+			'mp2_insert_pages'		=> 'False',
+			'seperator'				=> '2',
 			'seperator_code'		=> "--~~~~~~~~~~~~--"
 		);
 		update_option("ta_multipage", $ta_multipage);
@@ -492,13 +506,12 @@ function ta_multipage_add_options_subpanel() {
 	}
 
 	// removes slahes to display code correctly in textarea
-	$code = stripslashes($ta_multipage['seperator_code']);
 	
 ?>
 <div class="wrap">
 	<h2 id="write-post"><?php _e("Multipage Toolkit Auto Insert Options",'TA_multi_toolkit');?></h2>
 	<table><tr>
-    	<td><?php _e("Tarkan Akdam's Multi-page toolkit creates pagetitles for multipage posts with highly configurable navigation and quickjump pagination features, ultimate replacement for the builtin wp_link_pages() function without the code. ",'TA_multi_toolkit');?>
+    	<td><?php _e("Tarkan Akdam's Multi-page toolkit creates pagetitles for multipage posts & pages with highly configurable navigation and quickjump pagination features, ultimate replacement for the builtin wp_link_pages() function without the code. ",'TA_multi_toolkit');?>
     More information can be found at <a href="http://www.tarkan.info/tag/multi-page" target="_blank">http://www.tarkan.info</a> - Please consider making a donation if you find this plugin useful. It helps pay for my hosting.
     <br/>
     <strong>It is recommended to reset settings after updating the Multi-page Toolkit.</strong></td>
@@ -531,13 +544,20 @@ function ta_multipage_add_options_subpanel() {
 				echo '<input name="mp1_insert_bottom" type="checkbox" value="True">'; }
 		?>
 		<?php _e(" Bottom",'TA_multi_toolkit');?>
+        &nbsp;
+        <?php	if ( $ta_multipage["mp1_insert_pages"] == 'True' ) {
+				echo '<input name="mp1_insert_pages" type="checkbox" value="True" checked>';
+				} else {
+				echo '<input name="mp1_insert_pages" type="checkbox" value="True">'; }
+		?>
+		<?php _e(" Pages",'TA_multi_toolkit');?>
 		</label>
         </td>
 	</tr>
     <tr>
     	<th><?php _e("Manual Insertion:",'TA_multi_toolkit');?></th>
         <td>Use the following code within your theme files
-        <br/>&lt;?php TA_display_pages(1); ?&gt;
+        <br/>&lt;?php TA_content_jump(1); ?&gt;
         </td>
 	</tr>
     <tr>
@@ -550,7 +570,7 @@ function ta_multipage_add_options_subpanel() {
 		?>
         <?php _e("Display multipage post on a single page",'TA_multi_toolkit');?>
         <br />
-        <input type="text" name="mp1_display_all_text" value="<?php echo $ta_multipage["mp1_display_all_text"]; ?>" />
+        <input type="text" name="mp1_display_all_text" value="<?php echo(stripslashes($ta_multipage["mp1_display_all_text"])); ?>" />
         <?php _e(" Link title",'TA_multi_toolkit');?>
         </td>
     </tr>
@@ -568,30 +588,30 @@ function ta_multipage_add_options_subpanel() {
 	<tr>
     	<th><?php _e("Before/After Text:",'TA_multi_toolkit'); ?></th>
         <td>
-        <label><input type="text" name="mp1_before" value="<?php echo stripslashes($ta_multipage["mp1_before"]); ?>" />
+        <label><input type="text" name="mp1_before" value="<?php echo(stripslashes($ta_multipage["mp1_before"])); ?>" />
         <?php _e(" Before",'TA_multi_toolkit');?></label>
         <br />
-        <label><input type="text" name="mp1_after" value="<?php echo stripslashes($ta_multipage["mp1_after"]); ?>" />
+        <label><input type="text" name="mp1_after" value="<?php echo(stripslashes($ta_multipage["mp1_after"])); ?>" />
         <?php _e(" After",'TA_multi_toolkit');?></label>
         </td>
 	</tr>
 	<tr>
     	<th><?php _e("Next/Previous:",'TA_multi_toolkit'); ?></th>
         <td>
-        <label><input type="text" name="mp1_previouspagelink" value="<?php echo $ta_multipage["mp1_previouspagelink"]; ?>" />
+        <label><input type="text" name="mp1_previouspagelink" value="<?php echo(stripslashes($ta_multipage["mp1_previouspagelink"])); ?>" />
         <?php _e(" Previous",'TA_multi_toolkit');?></label>
         <br />
-        <label><input type="text" name="mp1_nextpagelink" value="<?php echo $ta_multipage["mp1_nextpagelink"]; ?>" />
+        <label><input type="text" name="mp1_nextpagelink" value="<?php echo(stripslashes($ta_multipage["mp1_nextpagelink"])); ?>" />
         <?php _e(" Next",'TA_multi_toolkit');?></label>
         </td>
 	</tr>
 	<tr>
     	<th><?php _e("First/Last Page Text:",'TA_multi_toolkit'); ?></th>
         <td>
-        <label><input type="text" name="mp1_firstpagetext" value="<?php echo $ta_multipage["mp1_firstpagetext"]; ?>" />
+        <label><input type="text" name="mp1_firstpagetext" value="<?php echo(stripslashes($ta_multipage["mp1_firstpagetext"])); ?>" />
         <?php _e(" First Page",'TA_multi_toolkit');?></label>
         <br />
-        <label><input type="text" name="mp1_lastpagetext" value="<?php echo $ta_multipage["mp1_lastpagetext"]; ?>" />
+        <label><input type="text" name="mp1_lastpagetext" value="<?php echo(stripslashes($ta_multipage["mp1_lastpagetext"])); ?>" />
         <?php _e(" Last Page",'TA_multi_toolkit');?></label>
         </td>
 	</tr>
@@ -664,13 +684,20 @@ function ta_multipage_add_options_subpanel() {
 				echo '<input name="mp2_insert_bottom" type="checkbox" value="True">'; }
 		?>
 		<?php _e("Bottom",'TA_multi_toolkit');?>
+        &nbsp;
+        <?php	if ( $ta_multipage["mp2_insert_pages"] == 'True' ) {
+				echo '<input name="mp2_insert_pages" type="checkbox" value="True" checked>';
+				} else {
+				echo '<input name="mp2_insert_pages" type="checkbox" value="True">'; }
+		?>
+		<?php _e(" Pages",'TA_multi_toolkit');?>
 		</label>
         </td>
 	</tr>
     <tr>
     	<th><?php _e("Manual Insertion:",'TA_multi_toolkit');?></th>
         <td>Use the following code within your theme files
-        <br/>&lt;?php TA_display_pages(2); ?&gt;
+        <br/>&lt;?php TA_content_jump(2); ?&gt;
         </td>
 	</tr>
     <tr>
@@ -683,7 +710,7 @@ function ta_multipage_add_options_subpanel() {
 		?>
         <?php _e("Display multipage post on a single page",'TA_multi_toolkit');?>
         <br />
-        <input type="text" name="mp2_display_all_text" value="<?php echo $ta_multipage["mp2_display_all_text"]; ?>" />
+        <input type="text" name="mp2_display_all_text" value="<?php echo(stripslashes($ta_multipage["mp2_display_all_text"])); ?>" />
         <?php _e(" Link title",'TA_multi_toolkit');?>
         </td>
     </tr>
@@ -701,30 +728,30 @@ function ta_multipage_add_options_subpanel() {
 	<tr>
     	<th><?php _e("Before/After Text",'TA_multi_toolkit'); ?></th>
         <td>
-        <label><input type="text" name="mp2_before" value="<?php echo stripslashes($ta_multipage["mp2_before"]); ?>" />
+        <label><input type="text" name="mp2_before" value="<?php echo(stripslashes($ta_multipage["mp2_before"])); ?>" />
         <?php _e(" Before",'TA_multi_toolkit');?></label>
         <br />
-        <label><input type="text" name="mp2_after" value="<?php echo stripslashes($ta_multipage["mp2_after"]); ?>" />
+        <label><input type="text" name="mp2_after" value="<?php echo(stripslashes($ta_multipage["mp2_after"])); ?>" />
         <?php _e(" After",'TA_multi_toolkit');?></label>
         </td>
 	</tr>
 	<tr>
     	<th><?php _e("Next/Previous:",'TA_multi_toolkit'); ?></th>
         <td>
-        <label><input type="text" name="mp2_previouspagelink" value="<?php echo $ta_multipage["mp2_previouspagelink"]; ?>" />
+        <label><input type="text" name="mp2_previouspagelink" value="<?php echo(stripslashes($ta_multipage["mp2_previouspagelink"])); ?>" />
         <?php _e(" Previous",'TA_multi_toolkit');?></label>
         <br />
-        <label><input type="text" name="mp2_nextpagelink" value="<?php echo $ta_multipage["mp2_nextpagelink"]; ?>" />
+        <label><input type="text" name="mp2_nextpagelink" value="<?php echo(stripslashes($ta_multipage["mp2_nextpagelink"])); ?>" />
         <?php _e(" Next",'TA_multi_toolkit');?></label>
         </td>
 	</tr>
 	<tr>
     	<th><?php _e("First/Last Page Text:",'TA_multi_toolkit'); ?></th>
         <td>
-        <label><input type="text" name="mp2_firstpagetext" value="<?php echo $ta_multipage["mp2_firstpagetext"]; ?>" />
+        <label><input type="text" name="mp2_firstpagetext" value="<?php echo(stripslashes($ta_multipage["mp2_firstpagetext"])); ?>" />
         <?php _e(" First Page",'TA_multi_toolkit');?></label>
         <br />
-        <label><input type="text" name="mp2_lastpagetext" value="<?php echo $ta_multipage["mp2_lastpagetext"]; ?>" />
+        <label><input type="text" name="mp2_lastpagetext" value="<?php echo(stripslashes($ta_multipage["mp2_lastpagetext"])); ?>" />
         <?php _e(" Last Page",'TA_multi_toolkit');?></label>
         </td>
 	</tr>
@@ -789,7 +816,7 @@ function ta_multipage_add_options_subpanel() {
 		</td>
         <th><?php _e("HTML/CODE (e.g. javascript) to use as seperator (such as code for advertising) :",'TA_multi_toolkit');?></th>
         <td>
-        <textarea name="seperator_code" cols="60" rows="8"><?php echo($code); ?></textarea>
+        <textarea name="seperator_code" cols="60" rows="8"><?php echo(stripslashes($ta_multipage['seperator_code'])); ?></textarea>
         </td>
     </tr>
 </table>

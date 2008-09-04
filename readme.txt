@@ -1,10 +1,10 @@
 === Plugin Name ===
 Contributors: Tarkan Akdam
 Donate link: http://www.tarkan.info/20080106/tutorials/wordpress-plugin-multipage-tool-kit/
-Tags: posts, link_pages, multi-page, quicktag, navigation, 2.5, paginate, pagination, titles, heading, content menu, content table, page titles, seo
+Tags: posts, link_pages, multi-page, quicktag, navigation, 2.6.1, paginate, pagination, titles, heading, content menu, content table, page titles, seo
 Requires at least: 2.3
-Tested up to: 2.5.1
-Stable tag: 2.5
+Tested up to: 2.6.1
+Stable tag: 2.6
 
 Multi-page toolkit create titles for pages and configurable navigation features. Single (all) page view option with custom seperator (great for adverts). Easy to use. Integrated with the Visual Editor. No Code necessary - unless you want to!
 
@@ -27,6 +27,7 @@ Quick jump options include dropdown menu or a list menu using page numbers or pa
 
 New option to display all pages on a single page (ALL page link).
 New option to have a custom seperator between pages on the single page view, great for adding advertising code or just to make it look pretty.
+New option to display navigation on multipage pages as well as posts.
 
 * TA_display_pages
 
@@ -78,15 +79,18 @@ Examples
 Place this in your template file used to display posts (normally single.php) in the location where you want it to appear. You can call the parameters set from the options page.
 
 To display the options from the 1st instance settings use :-	
-	`<?php TA_display_pages(1); ?>`
+	`<?php TA_content_jump(1); ?>`
 	
 To display the options from the 2nd instance settings use :-	
-	`<?php TA_display_pages(2); ?>`
+	`<?php TA_content_jump(2); ?>`
 	
 
-You can still set the parameters directly in the function call if you prefer, they are set out below. Be careful the function call name is different.
+The above method is the prefered method of manual insertion, but you can still set the parameters directly in the function call if you prefer, they are set out below. Be careful the function call name is different.
 
 TA_content_jump($before = '<p>', $after = '</p>', $title_number = 2, $quick_type = 1, $nav_type = 2, $nav_number = TRUE, $previouspagelink = '&laquo;', $nextpagelink = '&raquo;', $firstpagetext = 'On First Page', $lastpagetext = 'On Last Page', $display_all = TRUE, $display_all_text = 'View All')
+
+Example
+	`<?php TA_content_jump('Page :','', 2, 2, 0, False, '&laquo;', '&raquo;'); ?>`
 
 Parameters (defaults shown)
 	
@@ -237,6 +241,11 @@ http://www.tarkan.info/archives/multipage/
 1. Example navigation methods with code required to create them.
 
 == Change Log ==
+* Version 2.6
+	* Added auto-insert function for Pages
+	* Checked compatible with Wordpress 2.6.1
+	* Fixed options reseting to default when no page seperator selected
+	* Fixed text entry boxes now accept html code without breaking
 * Version 2.5
 	* SVN broke the upload - so uploading again
 * Version 2.4
